@@ -1,0 +1,26 @@
+html, body{
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+    border: 0;
+    overflow: hidden;  /* Desabilita Barra de Rolagem */
+    display: block; 
+    background-color: black;
+}
+#canvas{
+    /*width: 100%;
+    height: 100%;*/
+    background-size: 100% 100%;
+    background-image: url("C:/Users/0220481812047/Documents/Jogo/fundo.gif");
+}
+
+#nave{
+    display: none;
+    width: 20px;
+    height: 20px;
+}
+#asteroides{
+    display:none;
+    width: 20px;
+    height: 20px;
+}

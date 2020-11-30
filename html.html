@@ -1,0 +1,833 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Nêmesis</title>
+    <style>
+        html, body{
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            border: 0;
+            overflow: hidden;  /* Desabilita Barra de Rolagem */
+            display: block; 
+            background-color: transparent;
+        }
+
+        #canvas{
+	   	    background-image: url("IMG/fundo.gif");
+            background-size: 110% 110%;
+            background-repeat: no-repeat;
+		   	background-color: black;  
+        }
+
+        #nave, #asteroide1, #asteroide2, #explosoes, #tiro ,#boss, #boss2, #boss2Damage, #bossDamage, #nave30{
+            display: none;
+        }
+    </style>
+</head>
+<body onload="Inicializar()"> 
+    <img src="IMG/nave.png" id="nave" width="72px" height="93px">
+    <img src="IMG/nave30.png" id="nave30" width="72px" height="93px">
+    <img src="IMG/asteroide1.png" id="asteroide1" width="75px" height="75px">
+    <img src="IMG/asteroide2.png" id="asteroide2" width="75px" height="75px">    
+    <img src="IMG/explosao.png" id="explosoes" width="75px" height="75px">
+    <img src="IMG/tiro.png" id="tiro" width="25px" height="41px">
+    <img src="IMG/boss.png" id="boss" width="261px" height="237px">
+    <img src="IMG/boss2.png" id="boss2" width="261px" height="237px">
+    <img src="IMG/boss2Damage.png" id="boss2Damage" width="261px" height="237px">
+    <img src="IMG/bossDamage.png" id="bossDamage" width="261px" height="237px">
+    <canvas id="canvas" width = "window" height = "body.height">
+        Não suportado no browser
+    </canvas>
+</body>
+<script type="text/javascript">
+
+var intervalo, jogadorpausa, vidas, pontos, pontos2, pontos3, easterEggs,
+morte, mvLeft, mvRight, mvDown, mvUp, obj, interTiro,
+interInimigo, x , y, explosao, nave, imgTiro, morte, boss, boss2, objboss, objboss2, direcao,
+menu, cor, nave30, criaBotao1, criaBotao2, criaBotao3, criaBotao4, iniciou, contador, proximaFase, perdeu, vidas, dicas
+var fase1, fase2, fase3, terminoJogo
+boss = document.getElementById('boss')
+boss2 = document.getElementById('boss2')
+    function Inicializar(){
+        nave = document.getElementById("nave");
+        imgTiro = document.getElementById("tiro")
+        nave30 = document.getElementById("nave30")
+        mvLeft = mvRight = mvDown = mvUp = morte = terminoJogo = dicas = jogadorpausa = perdeu = morte = perdeu = iniciou = poderAtivado = invocaboss1 = invocaboss2 = slowMotion = false
+        menu = true
+        cor = 'white'
+        easterEggs = contador = 0
+        pontos = 0 //fase 2
+        pontos2 = 0 //fase 3
+        pontos3= 0 //fase 1
+        vidas = 3
+        barraEspecial = 200
+        var tempo
+        
+        numboss = 0
+        proximaFase = false
+        /*MOISES*/
+        fase3 = true            
+        resizeCanvas()
+
+        obj = { //Jogador
+            x : canvas.width /2 - nave.width/2,
+            y : canvas.height - nave.height - 50,
+            velocidade : 9
+        };
+
+        objBoss = {
+            x : canvas.width/2 - boss.width/2,
+            y : -240,
+            velocidade : 2,
+            direcao : sorteio(1, 2),
+            vida : 400,
+            life : false
+        };
+
+        objboss2 = {
+            x : canvas.width/2 - boss2.width/2,
+            y : -240,
+            velocidade : 2,
+            direcao : 1,
+            vida : 400,
+            life : false
+        };
+       
+        canvas = document.querySelector("canvas");
+        context = canvas.getContext("2d");
+        
+/*================================================================================*/
+
+        criaBotao1 = canvas.width/2.8
+        criaBotao2 = canvas.height/2.5
+        criaBotao3 = canvas.width/3.5
+        criaBotao4 = canvas.height/10
+    /*================================================================================*/
+        
+        intervalo = setInterval(update, 18);
+        setInterval(funcexplosao, 12)       
+
+        document.addEventListener("keydown",keyboard)
+        document.addEventListener("keyup", keyup)        
+        document.addEventListener("mousedown", continuarJogo)  
+        window.addEventListener('resize', resizeCanvas, false)
+    }
+
+
+
+    function resizeCanvas() {
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+	}
+    
+    function keyboard(e){
+        if(e.keyCode == 37 || e.keyCode == 65) //Esquerda
+            mvLeft = true 
+        if(e.keyCode == 39 || e.keyCode == 68) //Direita
+            mvRight = true 
+        if(e.keyCode == 38 || e.keyCode == 87) //Cima
+            mvUp = true
+        if(e.keyCode == 40 || e.keyCode == 83) //Baixo
+            mvDown = true 
+        
+        if(e.keyCode == 80 && menu == false ){  // P (Pause)
+			if(jogadorpausa == false) {
+                clearInterval(intervalo)
+                clearInterval(interTiro)
+                clearInterval(interInimigo)
+                clearInterval(interFundo)
+				jogadorpausa = true;
+                var font = (canvas.width+canvas.height)/40
+                context.font = font+"px bold Tahoma";
+	            context.fillStyle= 'white';
+                var txt = 'JOGO PAUSADO'
+			    context.fillText(txt, criaBotao1, criaBotao2/2);
+    /*================================================================================*/
+                txt = 'INICIAR'
+                /*context.fillText(txt, criaBotao1*1.2, (criaBotao2+criaBotao4)*0.95);
+                criaBotao(criaBotao1,criaBotao2,criaBotao3,criaBotao4, 'green') */
+    /*================================================================================*/
+			} else {
+                jogadorpausa = false;
+                clearInterval(intervalo)
+                clearInterval(interTiro)
+                clearInterval(interInimigo)
+                clearInterval(interFundo)
+                intervalo = setInterval(update, 18);
+                interTiro = setInterval(criaTiro, 350);
+                interInimigo = setInterval(criaInimigo, 500);
+                interFundo = setInterval(criaFundo, 25)
+                /*console.log('caiu cara')*/
+            }
+		}
+
+        if(e.keyCode == 32){ //Barra de espaço (especial):
+            if(barraEspecial == 200){ //Se tiver carregada                                               
+                barraEspecial = 0
+                poderAtivado = true
+                slowMotion = true
+                obj.velocidade = 15
+                clearInterval(interInimigo)           
+                interInimigo = setInterval(criaInimigo, 2000);      
+                tempo = 5
+                interTempo = setInterval(diminuiTempo, 1000);    
+                clearInterval(interFundo)           
+                interFundo = setInterval(criaFundo, 100)
+                fundos.forEach(fundo => {
+                    fundo.velocidade = 7.5                  
+                });
+                                     
+                setTimeout(function(){ //Após 5 segundos, o tempo (os intervalos) volta ao normal                                      
+                    poderAtivado = false;
+                    obj.velocidade = 9
+                    slowMotion = false
+                    clearInterval(interInimigo)    
+                    interInimigo = setInterval(criaInimigo, 500);
+                    clearInterval(interFundo)     
+                    interFundo = setInterval(criaFundo, 25)
+                    fundos.forEach(fundo => {
+                        fundo.velocidade = 30        
+                    });
+                }, 5000);   
+            }
+        }
+    }
+    
+    function continuarJogo(momentoClick){
+        if (momentoClick.clientX >= (criaBotao1) && 
+            momentoClick.clientX<= (criaBotao1+criaBotao3)&& 
+            momentoClick.clientY>=(criaBotao2) && 
+            momentoClick.clientY<=(criaBotao2+criaBotao4)){
+                if(jogadorpausa == true) {
+                    jogadorpausa = false;
+                    clearInterval(intervalo)
+                    clearInterval(interTiro)
+                    clearInterval(interInimigo)
+                    clearInterval(interFundo)
+                    intervalo = setInterval(update, 18);
+                    interTiro = setInterval(criaTiro, 350);
+                    interInimigo = setInterval(criaInimigo, 500);
+                    interFundo = setInterval(criaFundo, 25)
+                    console.log('caiu cara')
+                }
+                console.log('fora cara') 
+        /*=========================================================================================== */        
+        }
+    }
+
+    var fundos = new Array();
+
+    function Fundo(){     
+        this.x = sorteio(1, canvas.width)
+        this.y = 0
+        if(poderAtivado == true)
+            this.velocidade = 7.5
+        else
+            this.velocidade = 30
+        this.cor = sorteio(1, 3)
+    }
+
+    function criaFundo(){
+        var fundo = new Fundo();              
+        fundos.push(fundo);
+    }
+
+    function movimentarFundo(){
+        fundos.forEach(fundo => {
+            fundo.y += fundo.velocidade 
+            if(fundo.cor == 1)
+                context.fillStyle = 'white'
+            else if(fundo.cor == 2)
+                context.fillStyle = 'rgb(70, 130, 180)' //azul
+            else                 
+                context.fillStyle = 'rgba(70, 130, 180, 0.3)' //azul com alfa
+            context.fillRect(fundo.x, fundo.y, 5, 5)
+            if (fundo.y >= canvas.height)
+                removeObj(fundos, fundo)                                   
+        });
+    }
+
+    function diminuiTempo(){
+        tempo--;
+        if(tempo == 0)
+            clearInterval(interTempo)
+    }
+
+    function locomover(){
+
+        var x = 0, y = 0
+
+        if(mvLeft){ //Esquerda
+            if(obj.x > 0){
+                obj.x -= obj.velocidade
+                x = 1
+            }  
+        }
+        if(mvRight){ //Direita
+            if(obj.x < (canvas.width - nave.width)){
+                obj.x += obj.velocidade
+                x = -1
+            } 
+        }
+        if(mvUp){ //Cima
+            if(obj.y > 0){
+                obj.y -= obj.velocidade
+                y = 1
+            }
+        }
+        if(mvDown){ //Baixo
+            if(obj.y < (canvas.height - nave.height)){
+                obj.y += obj.velocidade
+                y = -1
+            }
+        }
+   
+        
+
+        setTimeout(function(){
+            if(slowMotion == true){
+                context.drawImage(nave30, obj.x + x*20, obj.y + y*20, nave30.width, nave30.height)
+                context.drawImage(nave30, obj.x + x*40, obj.y + y*40, nave30.width, nave30.height)
+                console.log('Slow motion')
+            }               
+        })
+
+    }
+    
+    function keyup(e){
+        if(e.keyCode == 37 || e.keyCode == 65) //Esquerda
+            mvLeft = false 
+        if(e.keyCode == 39 || e.keyCode == 68) //Direita                             
+            mvRight = false 
+        if(e.keyCode == 38 || e.keyCode == 87) //Cima                             
+            mvUp = false
+        if(e.keyCode == 40 || e.keyCode == 83) //Baixo                              
+            mvDown = false 
+    }
+
+    function sorteio(min, max){
+        return Math.round(Math.random() * (max - min) + min);
+    }
+
+    var tiros = new Array();
+
+    function Tiro(){     
+        this.x = obj.x + nave.width/2 - imgTiro.width/2
+        this.y = obj.y
+        this.velocidade = 10
+    }
+
+    function criaTiro(){
+        var tiro = new Tiro();              
+        tiros.push(tiro);
+    } 
+
+    function atirar(){
+        tiros.forEach(tiro => {
+            tiro.y -= tiro.velocidade  
+            context.fillStyle = 'blue'
+            context.drawImage(imgTiro, tiro.x, tiro.y -= tiro.velocidade, imgTiro.width, imgTiro.height)
+            if (tiro.y <= 0)
+                removeObj(tiros, tiro) 
+            if(invocaboss1 == true && fase1==true){
+                if(!(objBoss.y < 30))
+                    if(tiro.x > objBoss.x + boss.width/3 && tiro.x + imgTiro.width < objBoss.x + boss.width - boss.width/3 && tiro.y < objBoss.y + boss.height - boss.height/3 && tiro.y + imgTiro.height > objBoss.y + boss.height/3){
+                        objBoss.life = true
+                        removeObj(tiros, tiro)
+                            objBoss.vida -= 20                     
+                            if(objBoss.vida <= 0){                        
+                                gameover() //Quando mata o boss                                               
+                            }
+                            console.log(objBoss.vida)
+                                
+                        } 
+
+            }else if (invocaboss2 == true && fase2==true)  {
+                    
+                if(!(objboss2.y < 30)){
+                    if(tiro.x > objboss2.x + boss2.width/3 && tiro.x + imgTiro.width < objboss2.x + boss2.width - boss2.width/3 && tiro.y < objboss2.y + boss2.height - boss2.height/3 && tiro.y + imgTiro.height > objboss2.y + boss2.height/3){
+                            objboss2.life = true
+                            removeObj(tiros, tiro)
+                            objboss2.vida -= 10
+                            if(objboss2.vida <= 0){   
+                                gameover()                       
+                            }
+                            console.log(objboss2.vida)
+                        }
+                    }
+
+            }
+        });
+    }
+
+    //Função chamada quando a fase é finalizada:
+    function gameover(){
+            clearInterval(intervalo)
+            intervalo = setInterval(update, 60)
+            clearInterval(interInimigo)
+            interInimigo = setInterval(criaInimigo, 1665);
+            clearInterval(interTiro)
+            interTiro = setInterval(criaTiro, 1165);
+            clearInterval(interFundo)            
+            interFundo = setInterval(criaFundo, 83.33)
+            slowMotion = true
+            proximaFase = true
+            setTimeout(function(){ //Após 3 segundos, começa a próxima fase                                 
+               
+                proximaFase = false
+                clearInterval(intervalo)
+                intervalo = setInterval(update, 18)
+                limpaTela()
+                slowMotion = false
+                interTiro = setInterval(criaTiro, 350);
+                interInimigo = setInterval(criaInimigo, 500);
+                clearInterval(interFundo)            
+                interFundo = setInterval(criaFundo, 25) 
+                if (fase3==true){
+                    console.log('fase3')
+                    fase3=false
+                    fase1=true
+                } else if (fase1==true){
+                    console.log('fase1')
+                    invocaboss1 = false
+                    fase1 =false
+                    fase2 =true
+                }else if (fase2==true){
+                    console.log('fase2')
+                    invocaboss2 = false
+                    terminoJogo = true
+                    
+                }
+            }, 2000);
+    }
+
+    function limpaTela(){
+    
+        clearInterval(interInimigo)
+        clearInterval(interTiro)
+
+        clearInterval(interFundo)
+        interFundo = setInterval(criaFundo, 25)
+
+        tiros = [];
+
+        inimigos = [];
+    }
+
+    var inimigos = new Array();
+
+    function Inimigo() {
+        this.x = Math.random() * (canvas.width - asteroide1.width)
+        this.y = 0
+        this.velocidade = 4
+        this.direcao = sorteio(-1,1)
+        this.num = sorteio(1, 2)
+    }
+
+    function criaInimigo(){
+        var inimigo = new Inimigo();             
+        inimigos.push(inimigo);
+    }
+
+    function inimigo(){
+        inimigos.forEach(inimigo => {
+            if(poderAtivado == true)
+                inimigo.velocidade = 1
+            else
+                inimigo.velocidade = 4
+
+            var asteroide = document.getElementById("asteroide" + inimigo.num)
+            context.drawImage(asteroide, inimigo.x, inimigo.y, asteroide.width, asteroide.height);
+
+            inimigo.y += inimigo.velocidade * 0.5 
+
+            if(inimigo.y < obj.y + nave.height && inimigo.y + asteroide.width > obj.y && inimigo.x + asteroide.width > obj.x && inimigo.x < obj.x + nave.width){
+                removeObj(inimigos, inimigo)
+                if(terminoJogo == false)
+                    vidas -= 1  
+                if (vidas >= 0){                    
+                    context.fillStyle = 'red'
+                    context.fillRect(0, 0, canvas.width, canvas.height)
+                }
+            }
+
+            if(inimigo.y > canvas.height){
+                removeObj(inimigos, inimigo)     
+                if (fase3==true){
+                    pontos3 -= 5
+                }else if (fase1==true){
+                    pontos -= 5
+                }else if (fase2==true){
+                    pontos2 -= 5
+                }          
+            }   
+
+            if(inimigo.direcao != 0){          
+                if(inimigo.x > canvas.width - asteroide.width)
+                    inimigo.direcao *= -1 
+                if(inimigo.x <  0)
+                    inimigo.direcao *= -1
+                if(inimigo.direcao == 1)
+                    inimigo.x+= inimigo.velocidade
+                else
+                    inimigo.x -= inimigo.velocidade
+            }
+
+            tiros.forEach(tiro => {
+                if(tiro.y < inimigo.y + asteroide.height && tiro.y + imgTiro.height > inimigo.y && tiro.x + imgTiro.width > inimigo.x && tiro.x < inimigo.x + asteroide.width){                    
+                    removeObj(tiros, tiro)
+                    removeObj(inimigos, inimigo)
+                    if(inimigo.num == 1){
+                        if (fase3==true){
+                            pontos3+=5  
+                        }else if (fase1==true){
+                            pontos += 5
+                        }else if (fase2==true){
+                            pontos2+= 5
+                        }
+
+                    } else{
+                        if (fase3==true){
+                            pontos3+= 10
+                        } else if (fase1==true){
+                            pontos += 10
+                        }else if (fase2==true){
+                            pontos2+= 10
+                        }
+                        
+                    }
+                    if (pontos3 >= 150 && fase3 ==true){
+                        gameover()
+                    } else if(pontos >= 150 && fase1==true){
+                        if(invocaboss1 == false){
+                            invocaboss1 = true
+                            numboss++;
+                        }
+                    }else if(pontos2 > 300 && terminoJogo == false){
+                        
+                        if(invocaboss2 == false){ 
+                            console.log('INVOCANDO')                           
+                                invocaboss2 = true
+                            }
+                    }
+                    if(barraEspecial < 200)
+                        if(poderAtivado == false)
+                            barraEspecial += 10
+                    morte = true
+                    funcexplosao(inimigo)
+                }
+            });  
+        });
+    }
+
+    function funcexplosao(inimigo){
+        if(morte){
+            explosao = document.getElementById("explosoes")
+            context.drawImage(explosao, inimigo.x, inimigo.y, explosao.width, explosao.height)
+            morte = false
+        }
+    }
+
+    function removeObj(tiros, tiro){
+        var index = tiros.indexOf(tiro);
+        tiros.splice(index, 1);     
+    }
+
+    function Boss(){
+        if(objBoss.direcao == 2){
+            objBoss.direcao = -1
+        }
+
+        if(objBoss.life){
+            boss = document.getElementById('bossDamage')
+            objBoss.life = false
+        }else    
+            boss = document.getElementById('boss')
+
+        if(objBoss.vida == 0){
+            boss = document.getElementById('explosoes')
+            context.drawImage(boss, objBoss.x, objBoss.y, 261, 237)
+        }else
+            context.drawImage(boss, objBoss.x, objBoss.y, boss.width, boss.height)
+
+        if(objBoss.y < 30)
+            objBoss.y += objBoss.velocidade
+        else{
+            objBoss.x += objBoss.velocidade * objBoss.direcao
+            if(objBoss.x + boss.width > canvas.width){
+                objBoss.direcao = -1 
+            }
+            if(objBoss.x <  0){
+                objBoss.direcao = 1
+            }
+        }
+        
+        //Vida do boss:
+        context.fillStyle = 'rgba(255, 0, 0)'
+        context.fillRect(canvas.width/2 - (canvas.width*0.3)/2, canvas.height - 20, objBoss.vida, 10)
+
+        //Fundo vermelho mais escuro na vida do boss:
+        context.fillStyle = 'rgba(255, 0, 0, 0.6)'
+        context.fillRect(canvas.width/2 - (canvas.width*0.3)/2, canvas.height - 20, 400, 10)
+    }
+
+    function Boss2(){
+        if(objboss2.direcao == 2){
+            objboss2.direcao = -1
+        }
+
+        if(objboss2.life){
+            boss2 = document.getElementById('boss2Damage')
+            objboss2.life = false
+        }else    
+            boss2 = document.getElementById('boss2')
+
+        if(objboss2.vida <= 0){
+            invocaboss2 = false
+            boss2 = document.getElementById('explosoes')
+            context.drawImage(boss2, objboss2.x, objboss2.y, 261, 237)
+        }else{
+            context.drawImage(boss2, objboss2.x, objboss2.y, boss2.width, boss2.height)
+        }
+
+        if(objboss2.y < 30)
+            objboss2.y += objboss2.velocidade
+        else{
+            objboss2.x += objboss2.velocidade * objboss2.direcao
+            if(objboss2.x + boss2.width > canvas.width){
+                objboss2.direcao = -1 
+            }
+            if(objboss2.x <  0){
+                objboss2.direcao = 1
+            }
+        }
+        
+        //Vida do boss2:
+        context.fillStyle = 'rgba(255, 0, 0)'
+        context.fillRect(canvas.width/2 - (canvas.width*0.3)/2, canvas.height - 20, objboss2.vida, 10)
+
+        //Fundo vermelho mais escuro na vida do boss2:
+        context.fillStyle = 'rgba(255, 0, 0, 0.6)'
+        context.fillRect(canvas.width/2 - (canvas.width*0.3)/2, canvas.height - 20, 400, 10)
+    }
+
+    function render(){
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        if(menu == false){ //Desenha um quadrado preto no canvas para esconder o gif das estrelas
+            context.fillStyle = "black"
+            context.fillRect(0, 0, canvas.width, canvas.height)
+        }
+        
+        //Nave (jogador):
+        context.drawImage(nave, obj.x, obj.y, nave.width, nave.height);
+
+        //Navezinhas (vida do jogador):
+        if(terminoJogo == false)
+            for(var i = 1; i<=vidas; i++){  
+                var vida = document.getElementById("nave")
+                context.drawImage(vida, canvas.width-83.33 * i, canvas.height - 80, 20, 30)
+            }
+
+        //Pontuação:
+        if(fase3 == true){
+            context.font = "30pt Arial"
+            context.fillStyle= 'white'
+		    context.fillText('P: '+ pontos3, canvas.width - 170, 130)
+        }else if(fase2 == true){
+            context.font = "30pt Arial"
+            context.fillStyle= 'white'
+		    context.fillText('P: '+ pontos2, canvas.width - 170, 130)
+        }else if(fase1 == true){
+            context.font = "30pt Arial"
+            context.fillStyle= 'white'
+		    context.fillText('P: '+ pontos, canvas.width - 170, 130)
+        }
+
+        /*context.font = "30pt Arial"
+        context.fillStyle= 'white'
+		context.fillText('P: '+ pontos, canvas.width - 170, 130);    */    
+   
+        //Barra de especial:             
+        if(barraEspecial != 200)   
+            context.fillStyle = 'rgba(169, 169, 169, 0.7)' //cinza            
+        else
+            context.fillStyle = 'rgba(255, 165, 0, 0.7)' //laranja
+        context.fillRect(canvas.width - 250, canvas.height - 20, barraEspecial, 10)    
+
+        if(terminoJogo == true && perdeu == false){
+            context.font = "30pt Arial"
+            context.fillStyle = 'yellow'
+		    context.fillText('Término do jogo', canvas.width/2.4, canvas.height/2.5);
+            context.fillText('Pontos da fase 1: ' + pontos3, canvas.width/2.5, canvas.height/2.1);
+            context.fillText('Pontos da fase 2: ' + pontos, canvas.width/2.5, canvas.height/1.8);
+            context.fillText('Pontos da fase 3: ' + pontos2, canvas.width/2.5, canvas.height/1.6);
+        }else if(terminoJogo == true && fase2 == true && proximaFase == true){
+            context.font = "40pt Arial"
+            context.fillStyle = 'yellow'
+		    context.fillText('FASE COMPLETA', canvas.width/2.9, canvas.height/3);
+		    context.fillText('VOCÊ TERMINOU!', canvas.width/3.3, canvas.height/2);
+        }else if(proximaFase == true && perdeu == false && terminoJogo==false && fase2 != true){
+            context.font = "40pt Arial"
+            context.fillStyle = 'yellow'
+		    context.fillText('FASE COMPLETA', canvas.width/2.9, canvas.height/3);
+		    context.fillText('INICIANDO NOVA FASE ....', canvas.width/3.3, canvas.height/2);
+        }
+
+    }
+   
+    function update(){
+        if (menu===false){
+            if (vidas >= 0){
+                locomover() 
+                render() 
+                inimigo()
+                atirar() 
+                perdeu = false
+                if(invocaboss1 == true){
+                    Boss()
+
+                }else if(invocaboss2 == true){
+                    Boss2()
+                }
+                movimentarFundo()     
+            } else{
+
+                menu = true
+                perdeu = true
+                fase1 = false
+                fase2 = false
+                fase3 = true
+            }
+        } else {
+
+
+            /*===========================================================================================*/
+            var tamFont = canvas.width/29
+            context.font = tamFont + "px Monospace"; 
+            context.fillStyle= 'white';
+            /*================================================================================*/
+            var txt
+            if (perdeu == false){
+                txt = 'NÊMESIS'
+                context.fillStyle = 'white'
+                context.font =  tamFont +25 + "px Monospace";
+                context.fillText(txt, canvas.width/2.5, canvas.height/4);
+                /*================================================================================*/
+                criaBotao(criaBotao1, criaBotao2, criaBotao3, criaBotao4, 'transparent')
+                context.fillStyle = 'yellow'
+                context.font =  tamFont + "px Monospace";
+                txt = 'INICIAR'
+                context.fillText(txt, criaBotao1*1.2, (criaBotao2+criaBotao4)*0.95);
+                /*================================================================================*/   
+            } else {
+                clearInterval(interFundo)
+                clearInterval(interInimigo)
+                txt = 'GAME OVER'
+                context.font =  tamFont +30 + "px Monospace";
+                context.fillStyle= 'red'
+                context.fillText(txt, canvas.width/2.75, canvas.height/4);
+                criaBotao(criaBotao1, criaBotao2, criaBotao3, criaBotao4, 'transparent')
+                context.fillStyle = 'yellow'
+                context.font =  tamFont + "px Monospace";
+                txt = 'NOVO JOGO'
+                context.fillText(txt, criaBotao1*1.15, (criaBotao2+criaBotao4)*0.95);
+                /*================================================================================*/   
+            }
+            
+            
+            criaBotao(criaBotao1, criaBotao2/0.76, criaBotao3, criaBotao4, 'transparent')
+            txt = 'DICAS'   
+            context.font = tamFont + "px Monospace";            
+            context.fillStyle = 'yellow';
+            context.fillText(txt, criaBotao1*1.25, (criaBotao2/0.76+criaBotao4)*0.95);            
+            document.addEventListener("mousedown", iniciarJogo)        
+            
+            }  
+        }        
+   
+    function criaBotao(criaBotao1, criaBotao2, criaBotao3, criaBotao4, cor){
+        context.fillStyle = cor
+        context.fillRect(criaBotao1, criaBotao2, criaBotao3, criaBotao4)
+    }
+    /*===========================================================================================*/
+    function iniciarJogo(momentoClick){
+        if (momentoClick.clientX >= (criaBotao1) && 
+            momentoClick.clientX<= (criaBotao1+criaBotao3)&& 
+            
+            momentoClick.clientY>=(criaBotao2) && 
+            momentoClick.clientY<=(criaBotao2+criaBotao4) && menu == true){
+            menu = false 
+            tiros = []
+            fundos=[]
+            inimigos=[]
+            if (vidas == 3){
+                interTiro = setInterval(criaTiro, 350);
+                interInimigo = setInterval(criaInimigo, 500);    
+                interFundo =  setInterval(criaFundo, 25)   
+            }else {
+                interFundo =  setInterval(criaFundo, 25)  
+                interInimigo = setInterval(criaInimigo, 500);     
+
+                obj.x = canvas.width /2 - nave.width/2
+                obj.y = canvas.height - nave.height - 50
+
+                vidas = 3     
+                invocaboss1 = false
+                pontos = 0
+                pontos2= 0
+                pontos3=0
+                numboss = 0
+                fase3 = true
+                fase2 = false
+                fase1 = false
+                objBoss.x = canvas.width/2 - boss.width/2
+                objBoss.y = -240
+                objBoss.direcao = sorteio(1, 2)
+                objBoss.vida = 400
+                objBoss.life = false
+                objBoss2.x = canvas.width/2 - boss.width/2
+                objBoss2.y = -240
+                objBoss2.direcao = sorteio(1, 2)
+                objBoss2.vida = 400
+                objBoss2.life = false                                
+
+                
+
+                               
+            }           
+        } else  if (momentoClick.clientX >= (criaBotao1) && 
+            momentoClick.clientX<= (criaBotao1+criaBotao3)&& 
+            
+            momentoClick.clientY>=(criaBotao2/0.76) && 
+            momentoClick.clientY<=((criaBotao2/0.76)+criaBotao4) && dicas == false && menu == true){
+                console.log('dica false')
+                 
+                context.fillStyle = 'transparent'
+                context.fillRect(criaBotao1/1.5, criaBotao2*1.5, criaBotao3*1.9, criaBotao4*3.6)
+                context.font = 50 + "px Arial";            
+                context.fillStyle = 'white';
+                txt = '1 - Use as teclas W, S, D, A ou as SETAS para movimentar a nave'   
+                context.fillText(txt, criaBotao1, criaBotao2*1.7, criaBotao3+20, criaBotao4+10)  
+                txt = '2 - Use a tecla de ESPAÇO para ativar sua HABILIDADE ESPECIAL'   
+                context.fillText(txt, criaBotao1, criaBotao2*1.9, criaBotao3+10, criaBotao4) 
+                txt = '3 - Você só possui 3 vidas, portanto, cuidado'   
+                context.fillText(txt, criaBotao1, criaBotao2*2.1, criaBotao3, criaBotao4-50)
+                txt = '4 - Asteroides cinzas darão 5 pontos. Vermelhos darão 10 pontos'   
+                context.fillText(txt, criaBotao1, criaBotao2*2.3, criaBotao3, criaBotao4)
+                dicas = true
+
+        } else if  (momentoClick.clientX >= (criaBotao1) && 
+            momentoClick.clientX<= (criaBotao1+criaBotao3)&& 
+            
+            momentoClick.clientY>=(criaBotao2/0.76) && 
+            momentoClick.clientY<=((criaBotao2/0.76)+criaBotao4) && dicas == true && menu == true){
+                console.log('dica true')
+                dicas = false
+                context.clearRect(criaBotao1/1.5, criaBotao2*1.5, criaBotao3*1.9, criaBotao4*3.6)
+            }
+    }
+    
+</script>
+</html>
